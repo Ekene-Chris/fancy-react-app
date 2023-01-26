@@ -1,0 +1,12 @@
+version: '3.7'
+
+services:
+
+  fancy-react-app:
+    container_name: fancy-react-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 3000:80
+    

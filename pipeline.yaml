@@ -1,0 +1,44 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+trigger:
+  - develop
+  - master
+  - feature/*
+pr: none
+
+jobs:
+  - job: RunBuild
+    displayName: Run Build
+    pool:
+      vmImage: "ubuntu-latest"
+    
+    steps:
+      - script: |
+          docker build -f fancy-react-example-app/Dockerfile . -t fancy-react-app:latest
+        displayName: "docker build ReactApp"
+
+      - script: |
+          docker-compose -f docker-compose.yaml up -d --build
+        displayName: "docker build using docker-compose"
+
+      - task: Bash@3
+        displayName: "docker tag SCHEDULER (Global)"
+        inputs:
+          targetType: "inline"
+          script: "docker tag $CONTAINER_NAME:$(Build.BuildId) $ACR_HOST/$CONTAINER_NAME:$(Build.BuildId)"
+       
+      - task: Bash@3
+        displayName: "docker login ACR"
+        inputs:
+          targetType: "inline"
+          script: |
+            docker login --username $AZ_GB_APPID --password $AZ_GB_PASSWORD $ACR_HOST
+        
+      - task: Bash@3
+        displayName: docker push SCHEDULER
+        inputs:
+          targetType: "inline"
+          script: "docker push $ACR_HOST/$CONTAINER_NAME:$(Build.BuildId)"
+        
